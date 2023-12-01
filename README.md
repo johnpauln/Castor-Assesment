@@ -66,6 +66,7 @@ json
 ```
 Add Fruit Response
 json
+```
 {"message":"Fruit added successfully"} 
 ```
 
