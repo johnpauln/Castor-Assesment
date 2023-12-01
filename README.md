@@ -70,7 +70,9 @@ Add Fruit Response
 json
 Copy code
 ```
- ``` {"message":"Fruit added successfully"}  ```
+```
+ {"message":"Fruit added successfully"}  
+```
 
 
 
