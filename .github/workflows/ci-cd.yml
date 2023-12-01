@@ -1,42 +1,88 @@
-# pipeline to test, build and push docker image to dockerhub
-name: PyTest
-on: 
- push:
-    branches: 
-    - main
-        
+name: Test, Build and Push Docker Image to Dockerhub
+
+on:
+  push:
+    branches:
+      - develop
+      - master
+
+env:
+  DOCKER_USER: ${{secrets.DOCKER_USER}}
+  DOCKER_PASSWORD: ${{secrets.DOCKER_PASSWORD}}
+  REPO_NAME: ${{secrets.REPO_NAME}}
 
 jobs:
-  test:
+  Tests:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    strategy:
+      matrix:
+        python-version: ["3.10"]
 
     steps:
-      - name: Check out repository code
-        uses: actions/checkout@v2
-
-      # Setup Python (faster than using Python container)
-      - name: Setup Python
-        uses: actions/setup-python@v2
+       # Check out the source code from the repository
+      - uses: actions/checkout@v3
+       
+        # Set up the specified Python version
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
         with:
-          python-version: "3.9"
+          python-version: ${{ matrix.python-version }}
 
-      - name: Install pipenv
-        run: |
-          python -m pip install --upgrade pipenv wheel
-      - id: cache-pipenv
-        uses: actions/cache@v1
-        with:
-          path: ~/.local/share/virtualenvs
-          key: ${{ runner.os }}-pipenv-${{ hashFiles('**/Pipfile.lock') }}
-
+        # Upgrade pip and install project dependencies from requirements.txt if it exists
       - name: Install dependencies
-        if: steps.cache-pipenv.outputs.cache-hit != 'true'
         run: |
-          pipenv install --deploy --dev
-      - name: Run test suite
+          python -m pip install --upgrade pip
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+
+        # Install Ruff linter and run linting checks on the codebase
+        # The results are formatted in the GitHub style
+        # Linting errors do not cause the pipeline to fail
+      - name: Lint with Ruff
         run: |
-          pipenv run test -v
-      - name: Build, tag, and push image to Amazon ECR
+          pip install ruff
+          ruff --format=github --target-version=py310 .
+        continue-on-error: true
+
+         # Run tests using pytest for the Python codebase
+         # If any test fails or if any command within the step returns a non-zero exit code,
+         # the pipeline will fail with the corresponding exit code
+      - name: Test with pytest
         run: |
-           docker build -t test .     
+            set -e
+            python3 -m pytest
+            exit_code=$?
+            if [ $exit_code -ne 0 ]; then
+            echo "Tests failed with exit code $exit_code. Failing the pipeline."
+            exit $exit_code
+            fi
+
+
+  build-&-image-to-docker-hub:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.10"]
+
+    steps:
+        # Check out the source code from the repository
+      - uses: actions/checkout@v2
+
+        # Log into Docker Hub account using provided Docker credentials defined as envs
+      - name: docker login
+        run: |
+          docker login -u $DOCKER_USER -p $DOCKER_PASSWORD
+        
+        # Capture the current date and assign it to the 'date' variable for later use
+      - name: Get current date
+        id: date
+        run: echo "::set-output name=date::$(date +'%Y-%m-%d--%M-%S')"
+  
+        # Build a Docker image using the Dockerfile in the source code
+        # The image is tagged with the Docker username, repository name, and the current date
+      - name: Build the Docker image
+        run: docker build -t $DOCKER_USER/$REPO_NAME:${{ steps.date.outputs.date }} .
+
+        # Push the built Docker image to Docker Hub
+      - name: Docker Push
+        run: docker push $DOCKER_USER/$REPO_NAME:${{ steps.date.outputs.date }}
+        
