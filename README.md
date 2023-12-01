@@ -40,7 +40,6 @@ Response Examples 📋
 
 ### Get All Fruits Response
 json
-Copy code
 ```
 [
     {
@@ -58,7 +57,6 @@ Copy code
 ```
 ### Get Specific Fruit Response
 json
-Copy code
 ```
 {
     "id": 1,
@@ -68,8 +66,7 @@ Copy code
 ```
 Add Fruit Response
 json
-Copy code
-{"message":"Fruit added successfully"}  
+{"message":"Fruit added successfully"} 
 ```
 
 
