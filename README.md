@@ -70,12 +70,8 @@ Add Fruit Response
 json
 Copy code
 ```
-{
-    "id": 3,
-    "fruit": "orange",
-    "color": "orange"
-}
-```
+ ``` {"message":"Fruit added successfully"}  ```
+
 
 
 ## Pipeline Overview 🛠️
