@@ -58,6 +58,7 @@ jobs:
 
 
   build-and-push-image-to-docker-hub:
+    needs: Tests
     runs-on: ubuntu-latest
     strategy:
       matrix:
