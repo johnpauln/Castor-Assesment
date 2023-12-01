@@ -31,11 +31,13 @@ Retrieve information about a specific fruit by replacing <id> with the numeric I
 
 
  `curl -X GET http://localhost:5000/fruits/<id>`
+ 
 3. ### Add a Fruit
 Add a new fruit to the collection with a JSON payload.
 
 
  `curl -X POST -H "Content-Type: application/json" -d '{"fruit": "<fruit_name>", "color": "<fruit_color>"}' http://localhost:5000/fruits`
+ 
 Response Examples 📋
 
 ### Get All Fruits Response
